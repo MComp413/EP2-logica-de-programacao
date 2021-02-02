@@ -6,19 +6,13 @@
   [substring string]
   (>= (count string) (count substring)))
 
-(defn replace-first-or-nil
-  "if str/replace-first is succesful, returns it's result; else, returns nil"
-  [string fromA toB]
-  (let
-    [replacement (str/replace-first string fromA toB)]
-    (if (= replacement string)
-      nil
-    ;else
-      replacement)))
+(defn production-accepted?
+  [produced-string original-string limit]
+  (and (not= original-string produced-string) (<= (count produced-string) limit)))
 
-(defn produce
-  "Returns a set of all possible applications of a rule, once, onto a string"
-  ([string rule splitIndex accum]
+(defn produce-limited
+  "Returns a set of all possible applications of a rule, once, onto a string, and only the produced strings that are not greater than limit"
+  ([string rule limit splitIndex accum]
     (let
       [ head  (subs string 0 splitIndex)
         tail  (subs string splitIndex)
@@ -26,15 +20,35 @@
       (if (not (fits? fromA tail))
         accum
       ;else
-        (recur string rule (+ splitIndex 1) (into accum [(str head (replace-first-or-nil tail fromA toB))]))))
-  )
-  ([string rule]
+        (let
+          [ new-string  (str head (str/replace-first tail fromA toB))
+            new-accum   (if (production-accepted? new-string string limit)
+                          (into accum [new-string])
+                        ;else
+                          accum)]
+          (recur string rule limit (+ splitIndex 1) new-accum)))))
+  ([string rule limit]
   (if (not (fits? (first (first rule)) string))
     #{}
   ;else
-    (produce string rule 0 #{}))))
+    (produce-limited string rule limit 0 #{}))))
 
-(defn produce-all
+(defn produce-all-limited
   "Returns a set of all possible applications of every rule, once, onto a string"
-  [string, ruleset]
-  (reduce (fn [acc, rule] (into acc (produce string rule))) #{} ruleset))
+  [string ruleset limit]
+  (reduce (fn [acc rule] (into acc (produce-limited string rule limit))) #{} ruleset))
+
+(defn apply-production-step
+  "Applies every production law to every string once and returns the resulting set of strings, excluding those greater than limit"
+  [stringset ruleset limit]
+  (reduce (fn [acc string] (into acc (produce-all-limited string ruleset limit))) #{} stringset))
+
+(defn produce-language-limited
+  ""
+  [stringset ruleset limit]
+  (let
+    [ new-stringset (into stringset (apply-production-step stringset ruleset limit)) ]
+    (if (= (count stringset) (count new-stringset))
+      new-stringset
+    ;else 
+      (recur new-stringset ruleset limit))))
