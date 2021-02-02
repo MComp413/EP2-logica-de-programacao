@@ -1,10 +1,15 @@
 (ns ep2.production (:gen-class))
 (require '[clojure.string :as str])
+(require '[clojure.set :as set])
 
 (defn fits?
   "checks if a substring fits inside a string"
   [substring string]
   (>= (count string) (count substring)))
+
+(defn is-same-set?
+  [setA setB]
+  (= 0 (count (set/difference setA setB))))
 
 (defn production-accepted?
   [produced-string original-string limit]
@@ -23,7 +28,7 @@
         (let
           [ new-string  (str head (str/replace-first tail fromA toB))
             new-accum   (if (production-accepted? new-string string limit)
-                          (into accum [new-string])
+                          (conj accum new-string)
                         ;else
                           accum)]
           (recur string rule limit (+ splitIndex 1) new-accum)))))
@@ -45,10 +50,18 @@
 
 (defn produce-language-limited
   ""
-  [stringset ruleset limit]
+  [stringset-list ruleset limit]
   (let
-    [ new-stringset (into stringset (apply-production-step stringset ruleset limit)) ]
-    (if (= (count stringset) (count new-stringset))
-      new-stringset
+    [ new-stringset   (apply-production-step (last stringset-list) ruleset limit) ]
+    (if (= 0 (count new-stringset))
+      stringset-list
     ;else 
-      (recur new-stringset ruleset limit))))
+      (recur (conj stringset-list new-stringset) ruleset limit))))
+
+(defn test
+  []
+  (let
+    [ start "S"
+      ruleset #{{"S" "aSb"} {"S" "ab"}}
+      word "aabb" ]
+    (contains? (reduce #(into %1 %2) #{} (produce-language-limited [#{start}] ruleset (count word))) word)))
