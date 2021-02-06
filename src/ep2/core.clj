@@ -1,23 +1,21 @@
 (ns ep2.core (:gen-class))
+(require '[ep2.production :as prod])
+(require '[ep2.input-parser :as ip])
 
-(def P #{{"S" "ab"} {"S" "aSb"}}) ; Production rules
-(def G [#{"e" "d" "c"} #{"b" "a"} P "S"]) ; Grammar
+(def filename "resources/input.json")
 
-(def produceStep
-  "Receives a set of strings, produces all possibilities of applying each production rule to each string"
-  [stringSet productionRules]
-  (map)
-  )
-
-(def produce
-  "Returns all strings possibly produced from a given string and production rule applied a single time"
-  [string rule]
-  ()
-  )
-
-
+(defn is-word-accepted?
+  [word grammar]
+  (let
+    [ start (last grammar)
+      ruleset (grammar 2)
+      generated-sentences (prod/generate-sentences-limited [#{start}] ruleset (count word)) ]
+    (contains? (reduce #(into %1 %2) #{} generated-sentences) word)))
 
 (defn -main
-  "I don't do a whole lot ... yet."
+  "The test"
   [& args]
-  (println "Hello, World!"))
+  (let
+    [ {grammar :grammar word :word} (ip/parse-input (slurp (first args))) ]
+    (println grammar)
+    (println (is-word-accepted? word grammar))))

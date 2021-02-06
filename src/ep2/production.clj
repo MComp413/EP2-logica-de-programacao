@@ -1,28 +1,19 @@
 (ns ep2.production (:gen-class))
 (require '[clojure.string :as str])
-(require '[clojure.set :as set])
-
-(defn fits?
-  "checks if a substring fits inside a string"
-  [substring string]
-  (>= (count string) (count substring)))
-
-(defn is-same-set?
-  [setA setB]
-  (= 0 (count (set/difference setA setB))))
+(require '[ep2.utils :as utils])
 
 (defn production-accepted?
   [produced-string original-string limit]
   (and (not= original-string produced-string) (<= (count produced-string) limit)))
 
-(defn produce-limited
+(defn derive-string-with-rule
   "Returns a set of all possible applications of a rule, once, onto a string, and only the produced strings that are not greater than limit"
   ([string rule limit splitIndex accum]
     (let
       [ head  (subs string 0 splitIndex)
         tail  (subs string splitIndex)
         [fromA, toB] (first rule)]
-      (if (not (fits? fromA tail))
+      (if (not (utils/fits? fromA tail))
         accum
       ;else
         (let
@@ -33,35 +24,27 @@
                           accum)]
           (recur string rule limit (+ splitIndex 1) new-accum)))))
   ([string rule limit]
-  (if (not (fits? (first (first rule)) string))
+  (if (not (utils/fits? (first (keys rule)) string))
     #{}
   ;else
-    (produce-limited string rule limit 0 #{}))))
+    (derive-string-with-rule string rule limit 0 #{}))))
 
-(defn produce-all-limited
+(defn derive-string
   "Returns a set of all possible applications of every rule, once, onto a string"
   [string ruleset limit]
-  (reduce (fn [acc rule] (into acc (produce-limited string rule limit))) #{} ruleset))
+  (reduce (fn [acc rule] (into acc (derive-string-with-rule string rule limit))) #{} ruleset))
 
-(defn apply-production-step
-  "Applies every production law to every string once and returns the resulting set of strings, excluding those greater than limit"
+(defn derive-step
+  "Applies every production rule to every string once and returns the resulting set of strings, excluding those greater than limit"
   [stringset ruleset limit]
-  (reduce (fn [acc string] (into acc (produce-all-limited string ruleset limit))) #{} stringset))
+  (reduce (fn [acc string] (into acc (derive-string string ruleset limit))) #{} stringset))
 
-(defn produce-language-limited
-  ""
+(defn generate-sentences-limited
+  "Generates all sentences with length not greater than limit"
   [stringset-list ruleset limit]
   (let
-    [ new-stringset   (apply-production-step (last stringset-list) ruleset limit) ]
+    [ new-stringset   (derive-step (last stringset-list) ruleset limit) ]
     (if (= 0 (count new-stringset))
       stringset-list
     ;else 
       (recur (conj stringset-list new-stringset) ruleset limit))))
-
-(defn test
-  []
-  (let
-    [ start "S"
-      ruleset #{{"S" "aSb"} {"S" "ab"}}
-      word "aabb" ]
-    (contains? (reduce #(into %1 %2) #{} (produce-language-limited [#{start}] ruleset (count word))) word)))
