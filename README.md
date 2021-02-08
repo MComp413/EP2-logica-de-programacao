@@ -1,6 +1,21 @@
 # ep2
 
-## TODO
+## Credits
+Matheus de Oliveira Andrade 10333192
+Felipe Kenzo Shiraihsi 10262700
+
+## Running
+
+```
+lein run resources/input.json
+```
+
+## Examples options:
+
+- input.json
+- 1NaoConsecutivo.json
+- aDobroDeb.json
+- aNbNcN.json
 
 ## License
 

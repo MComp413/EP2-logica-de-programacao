@@ -3,11 +3,17 @@
 (require '[ep2.utils :as utils])
 
 (defn production-accepted?
+  "Verifies if a produced string is smaller or equal than the limit of the given word
+  and if the produced string is not equal to the original string from it derived."
   [produced-string original-string limit]
-  (and (not= original-string produced-string) (<= (count produced-string) limit)))
+  ( 
+    and (not= original-string produced-string) (<= (count produced-string) limit)
+  )
+)
 
 (defn derive-string-with-rule
-  "Returns a set of all possible applications of a rule, once, onto a string, and only the produced strings that are not greater than limit"
+  "Returns a set of all possible applications of a rule, once, onto a string, 
+  and only the produced strings that are not greater than limit"
   ([string rule limit splitIndex accum]
     (let
       [ head  (subs string 0 splitIndex)
@@ -21,8 +27,13 @@
             new-accum   (if (production-accepted? new-string string limit)
                           (conj accum new-string)
                         ;else
-                          accum)]
-          (recur string rule limit (+ splitIndex 1) new-accum)))))
+                          accum)
+          ]
+          (recur string rule limit (+ splitIndex 1) new-accum)
+        )
+      )
+    )
+  )
   ([string rule limit]
   (if (not (utils/fits? (first (keys rule)) string))
     #{}
@@ -47,4 +58,7 @@
     (if (= 0 (count new-stringset))
       stringset-list
     ;else 
-      (recur (conj stringset-list new-stringset) ruleset limit))))
+      (recur (conj stringset-list new-stringset) ruleset limit)
+    )
+  )
+)
